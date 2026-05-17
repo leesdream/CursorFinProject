@@ -6,9 +6,11 @@ Reads the latest Tiger Brokers CSV, enriches with MCP server data, opens report 
 import argparse
 import asyncio
 import io
+import json
 import os
 import sys
 import webbrowser
+from datetime import datetime
 from pathlib import Path
 
 # Force UTF-8 output on Windows so Unicode chars don't crash
@@ -23,9 +25,12 @@ from mcp.client.stdio import stdio_client
 
 from csv_parser import parse_latest_statement, Portfolio
 from mcp_config import MCP_SERVERS
+from philosophy_config import PHILOSOPHY_ANALYSES
 from report_generator import build_report
 
 load_dotenv()
+
+CACHE_FILE = Path(__file__).parent / "analysis_cache.json"
 
 
 async def run_mcp_analysis(portfolio: Portfolio, server: dict) -> str:
@@ -118,6 +123,33 @@ async def run_mcp_analysis(portfolio: Portfolio, server: dict) -> str:
                 messages.append({"role": "user", "content": tool_results})
 
 
+def run_philosophy_analysis(portfolio: Portfolio, config: dict) -> str:
+    """Call Claude directly (no MCP tools) to analyse the portfolio through a philosophy lens."""
+    client = anthropic.Anthropic()
+    response = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=4096,
+        system=[
+            {
+                "type": "text",
+                "text": config["system_prompt"],
+                "cache_control": {"type": "ephemeral"},
+            }
+        ],
+        messages=[
+            {
+                "role": "user",
+                "content": (
+                    f"Here is the client's portfolio as of {portfolio.statement_date}:\n\n"
+                    f"{portfolio.to_json()}\n\n"
+                    f"{config['analysis_prompt']}"
+                ),
+            }
+        ],
+    )
+    return "".join(b.text for b in response.content if hasattr(b, "text"))
+
+
 async def main():
     parser = argparse.ArgumentParser(description="Financial Portfolio Dashboard")
     parser.add_argument(
@@ -146,33 +178,69 @@ async def main():
     )
     print(f"  Total value: ${portfolio.overview.ending_total:,.2f}")
 
-    # 2. Run each MCP server analysis independently (skipped with --no-mcp)
-    sections: dict[str, str] = {}
+    # 2. Run analyses (skipped with --no-mcp)
+    mcp_sections: dict[str, str] = {}
+    philosophy_sections: dict[str, str] = {}
+    analysis_date: str = ""
     if args.no_mcp:
-        print("\n[2/3] Skipping MCP analysis (--no-mcp).")
+        print("\n[2/3] Skipping live analysis (--no-mcp) — loading cached results...")
+        if CACHE_FILE.exists():
+            cache = json.loads(CACHE_FILE.read_text(encoding="utf-8"))
+            mcp_sections = cache.get("mcp_sections", {})
+            philosophy_sections = cache.get("philosophy_sections", {})
+            analysis_date = cache.get("generated_at", "")
+            print(f"  Loaded cache from {analysis_date}")
+        else:
+            print("  No cache found — report will show CSV data only.")
     else:
         print(f"\n[2/3] Running {len(MCP_SERVERS)} MCP server analysis...")
         for server in MCP_SERVERS:
             print(f"\n  [{server['name']}]")
             try:
                 result = await run_mcp_analysis(portfolio, server)
-                sections[server["section_title"]] = result
+                mcp_sections[server["section_title"]] = result
                 print(f"  ✓ {server['name']} analysis complete")
             except Exception as exc:
-                sections[server["section_title"]] = (
+                mcp_sections[server["section_title"]] = (
                     f"Analysis unavailable: {exc}\n\n"
                     "Check that the MCP server package is installed and accessible via npx."
                 )
                 print(f"  ✗ {server['name']} error: {exc}")
 
+        print(f"\n  Running {len(PHILOSOPHY_ANALYSES)} philosophy analyses...")
+        for config in PHILOSOPHY_ANALYSES:
+            print(f"  [{config['name']}]")
+            try:
+                result = run_philosophy_analysis(portfolio, config)
+                philosophy_sections[config["section_title"]] = result
+                print(f"  ✓ {config['name']} analysis complete")
+            except Exception as exc:
+                philosophy_sections[config["section_title"]] = f"Analysis unavailable: {exc}"
+                print(f"  ✗ {config['name']} error: {exc}")
+
+        # Save fresh results to cache
+        if mcp_sections or philosophy_sections:
+            cache = {
+                "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                "mcp_sections": mcp_sections,
+                "philosophy_sections": philosophy_sections,
+            }
+            CACHE_FILE.write_text(json.dumps(cache, ensure_ascii=False, indent=2), encoding="utf-8")
+            print("\n  Analysis cached to analysis_cache.json")
+
     # 3. Build and open the report
     print("\n[3/3] Generating report...")
     output = str(Path(__file__).parent / "report.html")
-    build_report(portfolio, sections, output_path=output)
+    build_report(portfolio, mcp_sections, philosophy_sections, analysis_date=analysis_date, output_path=output)
     print(f"  Report saved: {output}")
 
     url = f"file:///{Path(output).resolve().as_posix()}"
-    webbrowser.open(url)
+    edge = r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
+    if Path(edge).exists():
+        import subprocess
+        subprocess.Popen([edge, url])
+    else:
+        webbrowser.open(url)
     print(f"  Opened in browser: {url}")
     print("\nDone.")
 

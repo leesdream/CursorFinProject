@@ -94,23 +94,32 @@ def _trades_table(trades) -> str:
     </div>"""
 
 
-def _mcp_sections(sections: dict[str, str]) -> str:
+def _render_sections(sections: dict[str, str], header_class: str, analysis_date: str = "") -> str:
     if not sections:
         return ""
     html = ""
-    for title, content in sections.items():
-        # Convert newlines to paragraphs for basic markdown-ish rendering
+    date_badge = (
+        f'<span class="badge rounded-pill bg-light text-dark fw-normal ms-2" style="font-size:.7rem">'
+        f'cached {analysis_date}</span>'
+    ) if analysis_date else ""
+    for i, (title, content) in enumerate(sections.items()):
+        section_id = "sec-" + "".join(c if c.isalnum() else "-" for c in title).lower()
         paragraphs = "".join(
             f"<p>{line}</p>" if line.strip() else ""
             for line in content.split("\n")
         )
         html += f"""
     <div class="card shadow-sm mb-4">
-      <div class="card-header bg-primary text-white">
-        <h5 class="mb-0">{title}</h5>
-      </div>
-      <div class="card-body">
-        <div class="analysis-content">{paragraphs}</div>
+      <button type="button"
+              class="card-header {header_class} border-0 d-flex justify-content-between align-items-center section-toggle"
+              data-bs-toggle="collapse" data-bs-target="#{section_id}" aria-expanded="true">
+        <h5 class="mb-0">{title}{date_badge}</h5>
+        <span class="chevron">&#9660;</span>
+      </button>
+      <div id="{section_id}" class="collapse show">
+        <div class="card-body">
+          <div class="analysis-content">{paragraphs}</div>
+        </div>
       </div>
     </div>"""
     return html
@@ -125,7 +134,13 @@ def _chart_data(portfolio: Portfolio) -> str:
     return json.dumps({"labels": labels, "values": values})
 
 
-def build_report(portfolio: Portfolio, sections: dict[str, str], output_path: str = "report.html") -> str:
+def build_report(
+    portfolio: Portfolio,
+    mcp_sections: dict[str, str],
+    philosophy_sections: dict[str, str],
+    analysis_date: str = "",
+    output_path: str = "report.html",
+) -> str:
     o = portfolio.overview
     total_change = o.ending_total - o.beginning_total
     total_change_cls = _pnl_class(total_change)
@@ -147,12 +162,17 @@ def build_report(portfolio: Portfolio, sections: dict[str, str], output_path: st
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Portfolio Report — {portfolio.statement_date}</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
   <style>
     body {{ background: #f8f9fa; }}
     .stat-card {{ border-left: 4px solid #0d6efd; }}
     .analysis-content p {{ margin-bottom: .4rem; line-height: 1.6; }}
     .hero {{ background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%); color: #fff; padding: 2rem; border-radius: .5rem; margin-bottom: 1.5rem; }}
+    button.card-header {{ width: 100%; text-align: left; cursor: pointer; }}
+    button.card-header:focus {{ outline: none; box-shadow: none; }}
+    .section-toggle .chevron {{ transition: transform 0.25s ease; display: inline-block; opacity: .85; }}
+    .section-toggle.collapsed .chevron {{ transform: rotate(-90deg); }}
   </style>
 </head>
 <body>
@@ -237,7 +257,10 @@ def build_report(portfolio: Portfolio, sections: dict[str, str], output_path: st
   </div>
 
   <!-- MCP analysis sections (one per server) -->
-  {_mcp_sections(sections)}
+  {_render_sections(mcp_sections, "bg-primary text-white", analysis_date)}
+
+  <!-- Philosophy analysis sections -->
+  {_render_sections(philosophy_sections, "bg-dark text-white", analysis_date)}
 
   <footer class="text-center text-muted small mt-4 pb-3">
     Generated {generated_at} &middot; Data source: {portfolio.broker} statement {portfolio.statement_date}
