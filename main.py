@@ -3,6 +3,7 @@ Financial Portfolio Dashboard
 Reads the latest Tiger Brokers CSV, enriches with MCP server data, opens report in browser.
 """
 
+import argparse
 import asyncio
 import io
 import os
@@ -118,8 +119,18 @@ async def run_mcp_analysis(portfolio: Portfolio, server: dict) -> str:
 
 
 async def main():
+    parser = argparse.ArgumentParser(description="Financial Portfolio Dashboard")
+    parser.add_argument(
+        "--no-mcp",
+        action="store_true",
+        help="Skip MCP server calls (no API usage); report shows parsed CSV data only.",
+    )
+    args = parser.parse_args()
+
     print("Financial Portfolio Dashboard")
     print("=" * 40)
+    if args.no_mcp:
+        print("  [--no-mcp] MCP analysis skipped.")
 
     # 1. Parse the latest statement
     statement_dir = Path(__file__).parent / "financialstatement"
@@ -135,21 +146,24 @@ async def main():
     )
     print(f"  Total value: ${portfolio.overview.ending_total:,.2f}")
 
-    # 2. Run each MCP server analysis independently
-    print(f"\n[2/3] Running {len(MCP_SERVERS)} MCP server analysis...")
+    # 2. Run each MCP server analysis independently (skipped with --no-mcp)
     sections: dict[str, str] = {}
-    for server in MCP_SERVERS:
-        print(f"\n  [{server['name']}]")
-        try:
-            result = await run_mcp_analysis(portfolio, server)
-            sections[server["section_title"]] = result
-            print(f"  ✓ {server['name']} analysis complete")
-        except Exception as exc:
-            sections[server["section_title"]] = (
-                f"Analysis unavailable: {exc}\n\n"
-                "Check that the MCP server package is installed and accessible via npx."
-            )
-            print(f"  ✗ {server['name']} error: {exc}")
+    if args.no_mcp:
+        print("\n[2/3] Skipping MCP analysis (--no-mcp).")
+    else:
+        print(f"\n[2/3] Running {len(MCP_SERVERS)} MCP server analysis...")
+        for server in MCP_SERVERS:
+            print(f"\n  [{server['name']}]")
+            try:
+                result = await run_mcp_analysis(portfolio, server)
+                sections[server["section_title"]] = result
+                print(f"  ✓ {server['name']} analysis complete")
+            except Exception as exc:
+                sections[server["section_title"]] = (
+                    f"Analysis unavailable: {exc}\n\n"
+                    "Check that the MCP server package is installed and accessible via npx."
+                )
+                print(f"  ✗ {server['name']} error: {exc}")
 
     # 3. Build and open the report
     print("\n[3/3] Generating report...")
