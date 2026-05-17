@@ -78,3 +78,10 @@ Desktop.ini
 
 # Claude Code local config (not project-specific)
 .claude/
+
+# Personal financial data — never commit
+financialstatement/
+historyreport/
+
+# Generated output
+report.html

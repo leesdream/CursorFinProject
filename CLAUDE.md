@@ -4,7 +4,46 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Python-based financial project. Stack and architecture will grow as development progresses.
+Python CLI that reads a Tiger Brokers brokerage statement CSV, enriches it with live market data via MCP servers (Yahoo Finance, and future servers), and generates a self-contained HTML report that opens in the browser.
+
+### How to run
+```
+.venv\Scripts\python.exe main.py
+```
+This produces `report.html` and opens it automatically.
+
+### Architecture
+
+```
+main.py              # Entry point — orchestrates parse → MCP analysis → report → browser
+csv_parser.py        # Parses Tiger Brokers hierarchical CSV into Portfolio dataclass
+mcp_config.py        # Registry of MCP analysis servers (add new servers here)
+report_generator.py  # Builds self-contained HTML (Bootstrap 5 + Chart.js via CDN)
+financialstatement/  # Drop Tiger Brokers Statement_*.csv files here
+.env                 # ANTHROPIC_API_KEY (gitignored)
+requirements.txt     # anthropic, mcp, python-dotenv
+```
+
+### Adding a new MCP server
+Copy the commented block in `mcp_config.py` — fill in `name`, `args`, `section_title`, and `analysis_prompt`. A new section appears in the report automatically, no other changes needed.
+
+### Tiger Brokers CSV format
+The CSV is hierarchical, not tabular. Each row: `[section, sub_type, sub2, row_type, data...]`
+- `row_type` = `DATA` for actual data rows, `TOTAL` for subtotals (skipped), blank for column headers
+- Sections: `Account Overview`, `Cash Report`, `Trades`, `Holdings`, `Currency Exchange Rates`
+- Holdings sub_types: `Stock`, `Option`, `Fund`
+- Encoding: UTF-8 with BOM (`utf-8-sig`)
+- Filename pattern: `Statement_<account>_<YYYYMMDD>.csv` — app always loads the most recent
+
+### MCP servers (user scope, global)
+- `context7` — up-to-date library docs
+- `playwright` — browser automation
+- `yahoo-finance` — live stock quotes, analyst ratings, option chains (`@fre4x/yahoo-finance`)
+- `filesystem` — file access (via `@modelcontextprotocol/server-filesystem`)
+
+### Python environment
+- Python 3.12 installed at `%LOCALAPPDATA%\Programs\Python\Python312\python.exe`
+- Virtual environment: `.venv\` (use `.venv\Scripts\python.exe` to run)
 
 ## Git & GitHub
 
