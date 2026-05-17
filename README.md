@@ -40,21 +40,23 @@ Both commands produce `report.html` and open it in the browser automatically. Th
 
 ## What's in the report
 
-Running without `--no-mcp` produces three categories of analysis, each as a collapsible card in the HTML (click the header arrow to expand or collapse):
+The analysis section renders as a **tabbed card** with three tabs — switch between them without scrolling:
 
-**Yahoo Finance (blue header)** — live prices, 52-week range, analyst consensus, and per-position buy/hold/sell recommendations.
+**Yahoo Finance** — live prices, 52-week range, analyst consensus, and per-position buy/hold/sell recommendations with a live market data table.
 
-**Howard Marks — Risk Control (dark header)** — applies Marks' framework from *The Most Important Thing* and his Oaktree memos:
+**Howard Marks** — applies Marks' framework from *The Most Important Thing* and his Oaktree memos:
 - Hidden risk inventory — positions whose calm recent behavior may mask fragility
 - Downside audit — realistic worst-case loss per significant holding
 - Cycle positioning — late-cycle risk exposure vs. genuine margin of safety
 - Asymmetry scorecard — positions with favorable vs. unfavorable risk/reward
 - Marks verdict — overall risk posture in one paragraph
 
-**Taleb — Antifragile Analysis (dark header)** — applies Taleb's framework from *Antifragile* and *The Black Swan*:
+**Taleb** — applies Taleb's framework from *Antifragile* and *The Black Swan*:
 - Triad classification — each position labeled fragile / robust / antifragile
 - Barbell assessment — safe core + speculative tail vs. dangerously in the fragile middle
 - Ruin scenarios — any position large enough to cause permanent capital impairment
 - Convexity inventory — convex payoffs (options, asymmetric upside) vs. concave payoffs
 - Black Swan exposure — holdings most vulnerable to a low-probability, high-impact event
 - Taleb verdict — one paragraph plus the single most important structural change recommended
+
+All analysis content is rendered from markdown — tables, bold text, headers, and blockquotes display correctly. When loaded from cache, a "cached [date]" badge appears in the card header.
