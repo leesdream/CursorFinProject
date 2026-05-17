@@ -94,35 +94,69 @@ def _trades_table(trades) -> str:
     </div>"""
 
 
-def _render_sections(sections: dict[str, str], header_class: str, analysis_date: str = "") -> str:
-    if not sections:
+def _md_to_html(text: str) -> str:
+    import markdown as md_lib
+    html = md_lib.markdown(text, extensions=["tables", "nl2br"])
+    html = (
+        html
+        .replace(
+            "<table>",
+            '<div class="table-responsive"><table class="table table-sm table-striped table-bordered align-middle">',
+        )
+        .replace("</table>", "</table></div>")
+        .replace(
+            "<blockquote>",
+            '<blockquote class="border-start border-3 border-secondary ps-3 text-muted my-3">',
+        )
+    )
+    return html
+
+
+def _analysis_tabs(
+    mcp_sections: dict[str, str],
+    philosophy_sections: dict[str, str],
+    analysis_date: str,
+) -> str:
+    all_sections: dict[str, str] = {**mcp_sections, **philosophy_sections}
+    if not all_sections:
         return ""
-    html = ""
+
     date_badge = (
-        f'<span class="badge rounded-pill bg-light text-dark fw-normal ms-2" style="font-size:.7rem">'
+        f'<span class="badge bg-secondary fw-normal ms-3" style="font-size:.72rem">'
         f'cached {analysis_date}</span>'
     ) if analysis_date else ""
-    for i, (title, content) in enumerate(sections.items()):
-        section_id = "sec-" + "".join(c if c.isalnum() else "-" for c in title).lower()
-        paragraphs = "".join(
-            f"<p>{line}</p>" if line.strip() else ""
-            for line in content.split("\n")
-        )
-        html += f"""
-    <div class="card shadow-sm mb-4">
-      <button type="button"
-              class="card-header {header_class} border-0 d-flex justify-content-between align-items-center section-toggle"
-              data-bs-toggle="collapse" data-bs-target="#{section_id}" aria-expanded="true">
-        <h5 class="mb-0">{title}{date_badge}</h5>
-        <span class="chevron">&#9660;</span>
-      </button>
-      <div id="{section_id}" class="collapse show">
-        <div class="card-body">
-          <div class="analysis-content">{paragraphs}</div>
-        </div>
+
+    tab_nav = ""
+    tab_panes = ""
+    for i, (title, content) in enumerate(all_sections.items()):
+        tab_id = "tab-" + "".join(c if c.isalnum() else "-" for c in title).lower()
+        short = title.split("—")[0].split(" Analysis")[0].strip()
+        active = "active" if i == 0 else ""
+        show_active = "show active" if i == 0 else ""
+        tab_nav += f"""
+        <li class="nav-item" role="presentation">
+          <button class="nav-link {active} px-3 py-2" data-bs-toggle="tab"
+                  data-bs-target="#{tab_id}" type="button" role="tab">{short}</button>
+        </li>"""
+        tab_panes += f"""
+        <div class="tab-pane fade {show_active}" id="{tab_id}" role="tabpanel">
+          <div class="analysis-content">{_md_to_html(content)}</div>
+        </div>"""
+
+    return f"""
+  <div class="card shadow-sm mb-4">
+    <div class="card-header d-flex align-items-center">
+      <ul class="nav nav-tabs card-header-tabs flex-grow-1 mb-0" role="tablist">
+        {tab_nav}
+      </ul>
+      {date_badge}
+    </div>
+    <div class="card-body p-4">
+      <div class="tab-content">
+        {tab_panes}
       </div>
-    </div>"""
-    return html
+    </div>
+  </div>"""
 
 
 def _chart_data(portfolio: Portfolio) -> str:
@@ -167,12 +201,20 @@ def build_report(
   <style>
     body {{ background: #f8f9fa; }}
     .stat-card {{ border-left: 4px solid #0d6efd; }}
-    .analysis-content p {{ margin-bottom: .4rem; line-height: 1.6; }}
     .hero {{ background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%); color: #fff; padding: 2rem; border-radius: .5rem; margin-bottom: 1.5rem; }}
-    button.card-header {{ width: 100%; text-align: left; cursor: pointer; }}
-    button.card-header:focus {{ outline: none; box-shadow: none; }}
-    .section-toggle .chevron {{ transition: transform 0.25s ease; display: inline-block; opacity: .85; }}
-    .section-toggle.collapsed .chevron {{ transform: rotate(-90deg); }}
+    /* Markdown content styles */
+    .analysis-content h1 {{ font-size: 1.35rem; margin-top: 1.5rem; margin-bottom: .5rem; }}
+    .analysis-content h2 {{ font-size: 1.15rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: .4rem; padding-bottom: .3rem; border-bottom: 1px solid #dee2e6; }}
+    .analysis-content h3 {{ font-size: 1.0rem; font-weight: 600; margin-top: 1.1rem; margin-bottom: .25rem; color: #495057; }}
+    .analysis-content p {{ margin-bottom: .5rem; line-height: 1.7; }}
+    .analysis-content ul, .analysis-content ol {{ padding-left: 1.5rem; margin-bottom: .75rem; }}
+    .analysis-content li {{ margin-bottom: .2rem; line-height: 1.65; }}
+    .analysis-content hr {{ margin: 1.5rem 0; border-color: #dee2e6; }}
+    .analysis-content strong {{ color: #212529; }}
+    .analysis-content blockquote p {{ margin-bottom: 0; font-style: italic; }}
+    .analysis-content .table {{ font-size: .875rem; }}
+    .nav-tabs .nav-link {{ color: #495057; }}
+    .nav-tabs .nav-link.active {{ font-weight: 600; }}
   </style>
 </head>
 <body>
@@ -256,11 +298,8 @@ def build_report(
     </div>
   </div>
 
-  <!-- MCP analysis sections (one per server) -->
-  {_render_sections(mcp_sections, "bg-primary text-white", analysis_date)}
-
-  <!-- Philosophy analysis sections -->
-  {_render_sections(philosophy_sections, "bg-dark text-white", analysis_date)}
+  <!-- Analysis tabs: Yahoo Finance · Howard Marks · Taleb -->
+  {_analysis_tabs(mcp_sections, philosophy_sections, analysis_date)}
 
   <footer class="text-center text-muted small mt-4 pb-3">
     Generated {generated_at} &middot; Data source: {portfolio.broker} statement {portfolio.statement_date}
