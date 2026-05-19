@@ -6,7 +6,7 @@ Reads your latest Tiger Brokers brokerage statement CSV, enriches it with live m
 
 ```
 python -m venv .venv
-.venv\Scripts\activate
+.venv/Scripts/activate
 pip install -r requirements.txt
 ```
 
@@ -25,7 +25,7 @@ Drop your Tiger Brokers `Statement_*.csv` file into the `financialstatement/` fo
 Calls the Yahoo Finance MCP server via the Anthropic API to enrich the report with live market data and analyst commentary. Requires `ANTHROPIC_API_KEY`.
 
 ```
-.venv\Scripts\python.exe main.py
+.venv/Scripts/python.exe main.py
 ```
 
 ### Without live analysis (cached results)
@@ -33,7 +33,7 @@ Calls the Yahoo Finance MCP server via the Anthropic API to enrich the report wi
 Skips all API calls. Loads the Yahoo Finance, Howard Marks, and Taleb analysis from the last full run and includes them in the report with a "cached [date]" badge so you always know how fresh the data is. Falls back to CSV data only if no cache exists yet.
 
 ```
-.venv\Scripts\python.exe main.py --no-mcp
+.venv/Scripts/python.exe main.py --no-mcp
 ```
 
 Both commands produce `report.html` and open it in the browser automatically. The first full run also writes `analysis_cache.json` (gitignored) for subsequent `--no-mcp` runs.
