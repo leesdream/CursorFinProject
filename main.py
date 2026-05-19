@@ -163,28 +163,31 @@ def run_synthesis_analysis(
 
     system_prompt = (
         "You are a senior investment advisor who reconciles multiple analytical frameworks "
-        "into clear, actionable guidance. You have three independent analyses of the same "
+        "into clear, actionable guidance. You have four independent analyses of the same "
         "portfolio: (1) Yahoo Finance — data-driven, market consensus; "
-        "(2) Howard Marks — risk-first, second-level thinking, cycle awareness; "
-        "(3) Nassim Taleb — antifragility, tail risk, Black Swan exposure. "
+        "(2) Peter Lynch — GARP, PEG ratio, category classification, ten-bagger hunting; "
+        "(3) Howard Marks — risk-first, second-level thinking, cycle awareness; "
+        "(4) Nassim Taleb — antifragility, tail risk, Black Swan exposure. "
         "Your job is to reconcile these views, surface conflicts, and deliver one prioritised action plan."
     )
 
     analysis_prompt = (
-        "Synthesize the three analyses below into a consolidated report with exactly these sections:\n\n"
-        "1. **Consensus Calls** — positions or themes where Yahoo Finance data, Marks' risk view, "
-        "AND Taleb's fragility view all point the same direction. These are highest-conviction findings.\n\n"
-        "2. **Conflicting Views** — where the frameworks disagree, present a clear two-sided comparison:\n"
+        "Synthesize the four analyses below into a consolidated report with exactly these sections:\n\n"
+        "1. **Consensus Calls** — positions or themes where Yahoo Finance data, Lynch's GARP view, "
+        "Marks' risk view, AND Taleb's fragility view all point the same direction. "
+        "These are highest-conviction findings.\n\n"
+        "2. **Conflicting Views** — where the frameworks disagree, present a clear comparison:\n"
         "   - State what each framework says\n"
-        "   - Explain why they differ (data vs. philosophy? short-term vs. tail-risk?)\n"
+        "   - Explain why they differ (valuation vs. risk? growth vs. fragility?)\n"
         "   - Give your own tiebreaker view\n\n"
         "3. **Priority Action List** — 5-8 specific, concrete next steps ranked by urgency. For each:\n"
         "   - Action (Buy / Sell / Hedge / Rebalance / Monitor)\n"
         "   - Position or asset\n"
         "   - Rationale (cite which framework(s) support it)\n"
         "   - Urgency: Immediate / This month / Watch\n\n"
-        "4. **Portfolio Health Score** — rate the portfolio on three dimensions (0–10 each):\n"
+        "4. **Portfolio Health Score** — rate the portfolio on four dimensions (0–10 each):\n"
         "   - Return Potential (Yahoo Finance view)\n"
+        "   - Growth at Reasonable Price (Lynch view)\n"
         "   - Risk Management (Marks view)\n"
         "   - Resilience / Antifragility (Taleb view)\n"
         "   Add one sentence explanation per score.\n\n"
@@ -287,7 +290,7 @@ async def main():
 
         # Synthesis: consolidate all three analyses
         if mcp_sections or philosophy_sections:
-            print("\n  [synthesis] Consolidating Yahoo Finance + Marks + Taleb...")
+            print("\n  [synthesis] Consolidating Yahoo Finance + Lynch + Marks + Taleb...")
             try:
                 result = run_synthesis_analysis(portfolio, mcp_sections, philosophy_sections)
                 synthesis_section["Synthesis — Action Plan"] = result
