@@ -8,9 +8,10 @@ Python CLI that reads a Tiger Brokers brokerage statement CSV, enriches it with 
 
 ### How to run
 ```
-.venv\Scripts\python.exe main.py
+.venv/Scripts/python.exe main.py
 ```
 This produces `report.html` and opens it automatically.
+Use forward slashes — they work in both PowerShell and bash (backslashes break in the bash tool).
 
 ### Architecture
 
@@ -69,6 +70,6 @@ git push
 Use a virtual environment in `.venv/` (excluded from git):
 ```
 python -m venv .venv
-.venv\Scripts\activate   # Windows
+.venv/Scripts/activate   # Windows
 pip install -r requirements.txt
 ```
