@@ -56,6 +56,7 @@ class Overview:
 class Portfolio:
     account_number: str
     account_holder: str
+    address: str
     statement_date: str
     broker: str
     base_currency: str
@@ -132,7 +133,7 @@ def _section_rows(rows, section: str, sub_type: str = None, row_type: str = "DAT
 
 
 def _parse_meta(rows) -> dict:
-    meta = {"account_holder": "", "account_number": "", "broker": "Tiger Brokers", "base_currency": "USD", "statement_date": ""}
+    meta = {"account_holder": "", "account_number": "", "address": "", "broker": "Tiger Brokers", "base_currency": "USD", "statement_date": ""}
     for row in rows:
         if len(row) < 2:
             continue
@@ -143,6 +144,8 @@ def _parse_meta(rows) -> dict:
         elif key == "account information" and len(row) > 4 and row[3].strip() == "DATA":
             if not meta["account_number"]:
                 meta["account_number"] = row[4].strip()
+            if len(row) > 5 and not meta["address"]:
+                meta["address"] = row[5].strip()
             if len(row) > 7:
                 meta["base_currency"] = row[7].strip() or "USD"
         elif "activity statement" in key and len(row) > 4:
@@ -350,6 +353,7 @@ def parse_latest_statement(folder: str) -> Portfolio:
     return Portfolio(
         account_number=meta["account_number"],
         account_holder=meta["account_holder"],
+        address=meta["address"],
         statement_date=meta["statement_date"],
         broker=meta["broker"],
         base_currency=meta["base_currency"],

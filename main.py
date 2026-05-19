@@ -230,6 +230,9 @@ async def main():
     statement_dir = Path(__file__).parent / "financialstatement"
     print(f"\n[1/3] Loading statement from {statement_dir} ...")
     portfolio = parse_latest_statement(str(statement_dir))
+    portfolio.account_holder = "meatball"
+    portfolio.account_number = "XXXX"
+    portfolio.address = "XXXX"
     print(
         f"  Account: {portfolio.account_holder} ({portfolio.account_number})"
         f" — {portfolio.statement_date}"
