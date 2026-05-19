@@ -115,9 +115,11 @@ def _md_to_html(text: str) -> str:
 def _analysis_tabs(
     mcp_sections: dict[str, str],
     philosophy_sections: dict[str, str],
+    synthesis_section: dict[str, str],
     analysis_date: str,
 ) -> str:
-    all_sections: dict[str, str] = {**mcp_sections, **philosophy_sections}
+    # Synthesis first, then MCP, then philosophy
+    all_sections: dict[str, str] = {**synthesis_section, **mcp_sections, **philosophy_sections}
     if not all_sections:
         return ""
 
@@ -126,6 +128,8 @@ def _analysis_tabs(
         f'cached {analysis_date}</span>'
     ) if analysis_date else ""
 
+    synthesis_titles = set(synthesis_section.keys())
+
     tab_nav = ""
     tab_panes = ""
     for i, (title, content) in enumerate(all_sections.items()):
@@ -133,11 +137,21 @@ def _analysis_tabs(
         short = title.split("—")[0].split(" Analysis")[0].strip()
         active = "active" if i == 0 else ""
         show_active = "show active" if i == 0 else ""
-        tab_nav += f"""
+
+        if title in synthesis_titles:
+            # Synthesis tab gets amber accent
+            tab_nav += f"""
+        <li class="nav-item" role="presentation">
+          <button class="nav-link synthesis-tab {active} px-3 py-2" data-bs-toggle="tab"
+                  data-bs-target="#{tab_id}" type="button" role="tab">&#9733; {short}</button>
+        </li>"""
+        else:
+            tab_nav += f"""
         <li class="nav-item" role="presentation">
           <button class="nav-link {active} px-3 py-2" data-bs-toggle="tab"
                   data-bs-target="#{tab_id}" type="button" role="tab">{short}</button>
         </li>"""
+
         tab_panes += f"""
         <div class="tab-pane fade {show_active}" id="{tab_id}" role="tabpanel">
           <div class="analysis-content">{_md_to_html(content)}</div>
@@ -172,9 +186,12 @@ def build_report(
     portfolio: Portfolio,
     mcp_sections: dict[str, str],
     philosophy_sections: dict[str, str],
+    synthesis_section: dict[str, str] | None = None,
     analysis_date: str = "",
     output_path: str = "report.html",
 ) -> str:
+    if synthesis_section is None:
+        synthesis_section = {}
     o = portfolio.overview
     total_change = o.ending_total - o.beginning_total
     total_change_cls = _pnl_class(total_change)
@@ -215,6 +232,8 @@ def build_report(
     .analysis-content .table {{ font-size: .875rem; }}
     .nav-tabs .nav-link {{ color: #495057; }}
     .nav-tabs .nav-link.active {{ font-weight: 600; }}
+    .nav-tabs .synthesis-tab {{ color: #b45309; font-weight: 600; }}
+    .nav-tabs .synthesis-tab.active {{ color: #92400e; background: #fffbeb; border-bottom-color: #fffbeb; }}
   </style>
 </head>
 <body>
@@ -298,8 +317,8 @@ def build_report(
     </div>
   </div>
 
-  <!-- Analysis tabs: Yahoo Finance · Howard Marks · Taleb -->
-  {_analysis_tabs(mcp_sections, philosophy_sections, analysis_date)}
+  <!-- Analysis tabs: Synthesis · Yahoo Finance · Howard Marks · Taleb -->
+  {_analysis_tabs(mcp_sections, philosophy_sections, synthesis_section, analysis_date)}
 
   <footer class="text-center text-muted small mt-4 pb-3">
     Generated {generated_at} &middot; Data source: {portfolio.broker} statement {portfolio.statement_date}

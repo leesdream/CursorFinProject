@@ -150,6 +150,68 @@ def run_philosophy_analysis(portfolio: Portfolio, config: dict) -> str:
     return "".join(b.text for b in response.content if hasattr(b, "text"))
 
 
+def run_synthesis_analysis(
+    portfolio: Portfolio,
+    mcp_sections: dict[str, str],
+    philosophy_sections: dict[str, str],
+) -> str:
+    """Synthesize Yahoo Finance, Howard Marks, and Taleb analyses into a consolidated action plan."""
+    all_analyses = "\n\n".join(
+        f"## {title}\n{content}"
+        for title, content in {**mcp_sections, **philosophy_sections}.items()
+    )
+
+    system_prompt = (
+        "You are a senior investment advisor who reconciles multiple analytical frameworks "
+        "into clear, actionable guidance. You have three independent analyses of the same "
+        "portfolio: (1) Yahoo Finance — data-driven, market consensus; "
+        "(2) Howard Marks — risk-first, second-level thinking, cycle awareness; "
+        "(3) Nassim Taleb — antifragility, tail risk, Black Swan exposure. "
+        "Your job is to reconcile these views, surface conflicts, and deliver one prioritised action plan."
+    )
+
+    analysis_prompt = (
+        "Synthesize the three analyses below into a consolidated report with exactly these sections:\n\n"
+        "1. **Consensus Calls** — positions or themes where Yahoo Finance data, Marks' risk view, "
+        "AND Taleb's fragility view all point the same direction. These are highest-conviction findings.\n\n"
+        "2. **Conflicting Views** — where the frameworks disagree, present a clear two-sided comparison:\n"
+        "   - State what each framework says\n"
+        "   - Explain why they differ (data vs. philosophy? short-term vs. tail-risk?)\n"
+        "   - Give your own tiebreaker view\n\n"
+        "3. **Priority Action List** — 5-8 specific, concrete next steps ranked by urgency. For each:\n"
+        "   - Action (Buy / Sell / Hedge / Rebalance / Monitor)\n"
+        "   - Position or asset\n"
+        "   - Rationale (cite which framework(s) support it)\n"
+        "   - Urgency: Immediate / This month / Watch\n\n"
+        "4. **Portfolio Health Score** — rate the portfolio on three dimensions (0–10 each):\n"
+        "   - Return Potential (Yahoo Finance view)\n"
+        "   - Risk Management (Marks view)\n"
+        "   - Resilience / Antifragility (Taleb view)\n"
+        "   Add one sentence explanation per score.\n\n"
+        "Do not repeat analysis already done. Focus on synthesis, comparison, and actionable decisions.\n\n"
+        "---\n"
+        f"ANALYSES:\n{all_analyses}"
+    )
+
+    client = anthropic.Anthropic()
+    response = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=8192,
+        system=[{"type": "text", "text": system_prompt, "cache_control": {"type": "ephemeral"}}],
+        messages=[
+            {
+                "role": "user",
+                "content": (
+                    f"Portfolio as of {portfolio.statement_date}:\n\n"
+                    f"{portfolio.to_json()}\n\n"
+                    f"{analysis_prompt}"
+                ),
+            }
+        ],
+    )
+    return "".join(b.text for b in response.content if hasattr(b, "text"))
+
+
 async def main():
     parser = argparse.ArgumentParser(description="Financial Portfolio Dashboard")
     parser.add_argument(
@@ -181,6 +243,7 @@ async def main():
     # 2. Run analyses (skipped with --no-mcp)
     mcp_sections: dict[str, str] = {}
     philosophy_sections: dict[str, str] = {}
+    synthesis_section: dict[str, str] = {}
     analysis_date: str = ""
     if args.no_mcp:
         print("\n[2/3] Skipping live analysis (--no-mcp) — loading cached results...")
@@ -188,6 +251,7 @@ async def main():
             cache = json.loads(CACHE_FILE.read_text(encoding="utf-8"))
             mcp_sections = cache.get("mcp_sections", {})
             philosophy_sections = cache.get("philosophy_sections", {})
+            synthesis_section = cache.get("synthesis_section", {})
             analysis_date = cache.get("generated_at", "")
             print(f"  Loaded cache from {analysis_date}")
         else:
@@ -218,12 +282,24 @@ async def main():
                 philosophy_sections[config["section_title"]] = f"Analysis unavailable: {exc}"
                 print(f"  ✗ {config['name']} error: {exc}")
 
-        # Save fresh results to cache
+        # Synthesis: consolidate all three analyses
         if mcp_sections or philosophy_sections:
+            print("\n  [synthesis] Consolidating Yahoo Finance + Marks + Taleb...")
+            try:
+                result = run_synthesis_analysis(portfolio, mcp_sections, philosophy_sections)
+                synthesis_section["Synthesis — Action Plan"] = result
+                print("  ✓ Synthesis complete")
+            except Exception as exc:
+                synthesis_section["Synthesis — Action Plan"] = f"Synthesis unavailable: {exc}"
+                print(f"  ✗ Synthesis error: {exc}")
+
+        # Save fresh results to cache
+        if mcp_sections or philosophy_sections or synthesis_section:
             cache = {
                 "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
                 "mcp_sections": mcp_sections,
                 "philosophy_sections": philosophy_sections,
+                "synthesis_section": synthesis_section,
             }
             CACHE_FILE.write_text(json.dumps(cache, ensure_ascii=False, indent=2), encoding="utf-8")
             print("\n  Analysis cached to analysis_cache.json")
@@ -231,7 +307,12 @@ async def main():
     # 3. Build and open the report
     print("\n[3/3] Generating report...")
     output = str(Path(__file__).parent / "report.html")
-    build_report(portfolio, mcp_sections, philosophy_sections, analysis_date=analysis_date, output_path=output)
+    build_report(
+        portfolio, mcp_sections, philosophy_sections,
+        synthesis_section=synthesis_section,
+        analysis_date=analysis_date,
+        output_path=output,
+    )
     print(f"  Report saved: {output}")
 
     url = f"file:///{Path(output).resolve().as_posix()}"
