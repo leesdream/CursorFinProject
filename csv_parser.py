@@ -326,7 +326,7 @@ def _parse_fx_rates(rows) -> dict:
 
 def parse_latest_statement(folder: str) -> Portfolio:
     """Find the most recent Statement_*.csv and parse it."""
-    csv_files = sorted(Path(folder).glob("Statement_*.csv"), reverse=True)
+    csv_files = sorted(Path(folder).glob("Statement_*.csv"), key=lambda p: p.stat().st_mtime, reverse=True)
     if not csv_files:
         raise FileNotFoundError(f"No Statement_*.csv files found in {folder!r}")
 
