@@ -7,7 +7,6 @@ import argparse
 import asyncio
 import io
 import json
-import os
 import sys
 import webbrowser
 from datetime import datetime
@@ -23,7 +22,7 @@ from dotenv import load_dotenv
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
-from csv_parser import parse_latest_statement, Portfolio
+from csv_parser import Portfolio, parse_latest_statement
 from mcp_config import MCP_SERVERS
 from philosophy_config import PHILOSOPHY_ANALYSES
 from report_generator import build_report

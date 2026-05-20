@@ -9,7 +9,7 @@ Row structure: [section, sub_type, sub2, row_type, col0, col1, ...]
 import csv
 import json
 import re
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 
