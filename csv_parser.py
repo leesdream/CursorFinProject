@@ -66,7 +66,11 @@ class Portfolio:
     fx_rates: dict = field(default_factory=dict)
 
     def to_json(self) -> str:
-        return json.dumps(asdict(self), indent=2, default=str)
+        d = asdict(self)
+        for pos in d.get("positions", []):
+            pos["market_value_usd"] = pos.pop("market_value")
+            pos["unrealized_pnl_usd"] = pos.pop("unrealized_pnl")
+        return json.dumps(d, indent=2, default=str)
 
     @property
     def stocks(self):
