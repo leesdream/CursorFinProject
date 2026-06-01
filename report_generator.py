@@ -34,9 +34,10 @@ def _holdings_table(positions, title: str) -> str:
         pnl_pct = (p.unrealized_pnl / cost_total * 100) if cost_total else 0
         # Show original-currency price with badge if non-USD, USD value always in market value column
         ccy_badge = f'<span class="badge bg-secondary ms-1">{p.currency}</span>' if p.currency != "USD" else ""
+        spread_line = f'<br><small class="text-info">{p.spread_label}</small>' if getattr(p, "spread_label", "") else ""
         rows += f"""
         <tr>
-          <td><strong>{p.symbol}</strong>{ccy_badge}<br><small class="text-muted">{p.name[:30]}</small></td>
+          <td><strong>{p.symbol}</strong>{ccy_badge}<br><small class="text-muted">{p.name[:30]}</small>{spread_line}</td>
           <td class="text-end">{_fmt_plain(p.quantity)}</td>
           <td class="text-end">{p.currency} {_fmt_plain(p.cost_price)}</td>
           <td class="text-end">{p.currency} {_fmt_plain(p.close_price)}</td>

@@ -24,6 +24,7 @@ class Position:
     unrealized_pnl: float
     currency: str
     asset_type: str  # stock | option | fund
+    spread_label: str = ""  # e.g. "SPY 750/700 bear put spread — long 750 leg (exp 2026-11-20)"
 
 
 @dataclass
@@ -158,20 +159,44 @@ def _parse_meta(rows) -> dict:
 
 
 def _parse_overview(rows) -> Overview:
-    # Row: Account Overview,,,DATA,<period>,cash,stock,option,fund,transit,interest,dividend,total
-    beg = {}
-    end = {}
+    # Find header row to map column names → indices (col layout varies: Option column absent in some statements)
+    col_names: list[str] = []
+    for row in rows:
+        if row[0].strip() != "Account Overview":
+            continue
+        if row[3].strip() == "" and len(row) > 5 and row[5].strip().lower() == "cash":
+            col_names = [c.strip().lower() for c in row[5:]]
+            break
+
+    def _col(name: str) -> int:
+        for i, h in enumerate(col_names):
+            if name in h:
+                return i
+        return -1
+
+    cash_i = _col("cash")
+    stock_i = _col("stock")
+    option_i = _col("option")
+    fund_i = _col("fund")
+    total_i = _col("total")
+
+    beg: dict = {}
+    end: dict = {}
     for row in _section_rows(rows, "Account Overview", row_type="DATA"):
         period = row[4].strip().lower() if len(row) > 4 else ""
         values = row[5:] if len(row) > 5 else []
         target = beg if "beginning" in period else (end if "end" in period else None)
-        if target is None or len(values) < 8:
+        if target is None or not values:
             continue
-        target["cash"] = _n(values[0])
-        target["stock"] = _n(values[1])
-        target["option"] = _n(values[2])
-        target["fund"] = _n(values[3])
-        target["total"] = _n(values[7])
+
+        def get_val(idx: int) -> float:
+            return _n(values[idx]) if 0 <= idx < len(values) else 0.0
+
+        target["cash"] = get_val(cash_i)
+        target["stock"] = get_val(stock_i)
+        target["option"] = get_val(option_i)
+        target["fund"] = get_val(fund_i)
+        target["total"] = get_val(total_i)
     return Overview(
         beginning_total=beg.get("total", 0),
         ending_total=end.get("total", 0),
@@ -328,6 +353,57 @@ def _parse_fx_rates(rows) -> dict:
     return rates
 
 
+def _parse_option_contract(symbol: str):
+    """Parse 'SPY 20261120 PUT 700.0' → (underlying, expiry, right, strike) or None."""
+    m = re.match(r"(\S+)\s+(\d{8})\s+(PUT|CALL)\s+([\d.]+)", symbol.strip(), re.IGNORECASE)
+    if not m:
+        return None
+    return m.group(1).upper(), m.group(2), m.group(3).upper(), float(m.group(4))
+
+
+def _fmt_strike(s: float) -> str:
+    return str(int(s)) if s == int(s) else str(s)
+
+
+def _detect_spreads(positions: list) -> None:
+    """Annotate matched option legs with a human-readable spread_label (in-place)."""
+    from collections import defaultdict
+
+    groups: dict = defaultdict(list)
+    for p in positions:
+        if p.asset_type != "option":
+            continue
+        parsed = _parse_option_contract(p.symbol)
+        if parsed is None:
+            continue
+        underlying, expiry, right, strike = parsed
+        groups[(underlying, expiry, right, round(abs(p.quantity)))].append((strike, p))
+
+    for (underlying, expiry, right, _), members in groups.items():
+        longs = [(s, p) for s, p in members if p.quantity > 0]
+        shorts = [(s, p) for s, p in members if p.quantity < 0]
+        if len(longs) != 1 or len(shorts) != 1:
+            continue  # only handle simple two-leg spreads
+
+        long_strike, long_pos = longs[0]
+        short_strike, short_pos = shorts[0]
+
+        if right == "PUT":
+            if long_strike > short_strike:
+                spread_name = f"{underlying} {_fmt_strike(long_strike)}/{_fmt_strike(short_strike)} bear put spread"
+            else:
+                spread_name = f"{underlying} {_fmt_strike(short_strike)}/{_fmt_strike(long_strike)} bull put spread"
+        else:
+            if long_strike < short_strike:
+                spread_name = f"{underlying} {_fmt_strike(long_strike)}/{_fmt_strike(short_strike)} bull call spread"
+            else:
+                spread_name = f"{underlying} {_fmt_strike(short_strike)}/{_fmt_strike(long_strike)} bear call spread"
+
+        exp_fmt = f"{expiry[:4]}-{expiry[4:6]}-{expiry[6:]}"
+        long_pos.spread_label = f"{spread_name} — long {_fmt_strike(long_strike)} leg (exp {exp_fmt})"
+        short_pos.spread_label = f"{spread_name} — short {_fmt_strike(short_strike)} leg (exp {exp_fmt})"
+
+
 def parse_latest_statement(folder: str) -> Portfolio:
     """Find the most recent Statement_*.csv and parse it."""
     csv_files = sorted(Path(folder).glob("Statement_*.csv"), key=lambda p: p.stat().st_mtime, reverse=True)
@@ -353,6 +429,7 @@ def parse_latest_statement(folder: str) -> Portfolio:
     overview = _parse_overview(rows)
     trades = _parse_trades(rows)
     positions = _parse_holdings(rows, fx_rates)
+    _detect_spreads(positions)
 
     return Portfolio(
         account_number=meta["account_number"],
