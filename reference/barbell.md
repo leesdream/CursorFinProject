@@ -222,3 +222,52 @@ The same 1400 call may cost $90–100 after IV normalises. Same trade, 30–40% 
 ### Key Rule
 
 > **Never buy options the same day as a large catalyst move.** IV is at its highest and will crush regardless of direction. Wait for the dust to settle, then buy into normalised IV.
+
+---
+
+## New Position: GOOG 400C (Nov 2026) — Upside Barbell Leg
+
+### Decision (2026-06-20)
+
+| | Value |
+|---|---|
+| GOOG spot | $367.46 (+1.48% on the day — no catalyst) |
+| Strike | $400 call, Nov 20 2026 |
+| Distance OTM | $32.54 = **8.9% above spot** |
+| Ask | ~$25.05/share = **$2,505/contract** |
+| Break-even at expiry | **$425.05 (+15.7% from spot)** |
+| Implied Volatility | **~39.5% annualized** |
+
+### Taleb Alignment Check
+
+| Taleb Requirement | This Trade |
+|---|---|
+| Small premium / large potential | Passes — $2,505/contract is small and defined |
+| Low IV (buying fairly priced tails) | **Passes — 39.5% is low for a mega-cap tech** |
+| No recent catalyst / IV spike | Passes — normal +1.48% day, no event |
+| Defined, limited loss | Passes — max loss is premium paid |
+| Convex upside | Passes — GOOG above $425 pays massively |
+
+**Verdict: Taleb trade. Proceed.**
+
+### Why GOOG Over NVDA / ORCL
+
+Compared at the same Nov 2026 expiry:
+- NVDA 230C: 46.5% IV, break-even +17.7% — borderline
+- ORCL 200C: 60.2% IV, break-even +21.2% — fails (IV too high)
+- **GOOG 400C: 39.5% IV, break-even +15.7% — cleanest structure**
+
+GOOG's 39.5% IV is genuinely low for a stock with real tail catalysts ahead: antitrust ruling outcomes, AI product announcements, earnings. You're buying a neglected tail, not a celebrated one.
+
+### Role in the Barbell
+
+This is the **antifragile upside leg**, mirroring the existing SPY long puts:
+
+```
+SAFE (SHV) <——> ANTIFRAGILE DOWN (SPY long puts) + ANTIFRAGILE UP (GOOG 400C)
+```
+
+- SPY puts profit if the market crashes
+- GOOG 400C profits if GOOG breaks out above $425 (all-time high territory)
+- Both legs: max loss = premium paid, upside is convex and uncapped
+- Only enemy: a calm, sideways market — where SHV earns yield quietly anyway
