@@ -119,6 +119,56 @@ Adding long OTM SPY calls alongside the existing long puts creates a **long stra
 
 ---
 
+## Why Not Just Hold QQQ?
+
+Raw returns on NASDAQ 100 look compelling in a bull market. But QQQ's actual history:
+
+| Crash | QQQ Drawdown | Recovery Time |
+|---|---|---|
+| 2000–2002 (dot-com) | **−83%** | ~15 years |
+| 2008 (financial crisis) | **−54%** | ~5 years |
+| 2022 (rate hike) | **−33%** | ~2 years |
+
+A $100K QQQ portfolio in 2000 became $17K by 2002. You needed a 488% gain just to get back to even. Most people either sold at the bottom or needed the money before recovery.
+
+### The Real Arguments for Complexity
+
+**1. Ruin is not recoverable**
+A −83% loss breaks compounding permanently if you needed to withdraw or panic sold. Never risk ruin, even for higher expected returns.
+
+**2. Volatility drag compounds negatively**
+- Year 1: +50%, Year 2: −50% → net = **−25%**, not 0%
+- Lower volatility portfolios compound faster over time even with lower headline returns
+- QQQ's high volatility actively destroys geometric returns vs arithmetic returns
+
+**3. You can't hold what you can't stomach**
+The theoretical 15% annual QQQ return is only yours if you held through −83%. Almost nobody did. A portfolio you can actually hold through crashes beats a theoretically superior one you sell at the bottom.
+
+**4. The hedged portfolio has a specific purpose**
+Long puts + cash + SHV isn't trying to beat QQQ. It's a hedged book that:
+- Profits if the market crashes (long puts)
+- Earns yield while waiting (SHV)
+- Protects capital so you can deploy at the bottom
+
+The goal is to **be the buyer when QQQ holders are forced to sell**.
+
+### When Simplicity Wins
+
+If you are under 35 with a 20+ year horizon, zero liquidity needs, and psychologically proven to hold through −80% without selling → QQQ with no hedging probably wins on final dollar amount.
+
+### The Actual Trade-off
+
+| | QQQ Only | Complex Barbell |
+|---|---|---|
+| Bull market | Wins | Underperforms |
+| Mild correction | Loses more | Loses less |
+| Tail crash (−50%+) | Devastated, 5–15yr recovery | **Profits or flat** |
+| Ability to stay invested | Low | High |
+
+The complex portfolio isn't for higher returns — it's for surviving the scenario that ends most investors' compounding journeys permanently. The edge isn't in the good years. It's in not being wiped out in the bad ones.
+
+---
+
 ## Case Study: MU 1400 Call (Sep 2026) — When "OTM Call" Is Not a Cheap Tail Bet
 
 ### Situation (2026-06-20)
