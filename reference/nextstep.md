@@ -9,7 +9,7 @@ Buy to close all 3 short SPY PUT 700 Nov-2026 contracts.
 - These shorts cap and reverse the protection from the long 750/755 puts at exactly the level you'd need them
 - Asymmetry is deeply unfavorable: 4.6:1 loss/gain ratio in a stress scenario
 - **All four frameworks in the report agree: close immediately**
-
+    
 ### 2. Exit IBIT (sell 214–264 shares, keep <50 if you want crypto exposure)
 - Down 19%, sitting only 6% above its 52-week low ($33.48)
 - No fundamental floor — no earnings, no P/E, no business moat
@@ -51,6 +51,25 @@ Buy to close all 3 short SPY PUT 700 Nov-2026 contracts.
 - If AI monetization disappoints next earnings, no obvious floor until ~$340
 - Set mental stop at **$345**; hold existing 55 shares otherwise
 
+#### Covered Call income opportunity (Yahoo suggestion: Sept $400 calls)
+A covered call lets you collect premium upfront by selling someone the right to buy your MSFT shares at a fixed price by expiry.
+
+**How it works:**
+- You own 100 shares → sell 1 call contract (Sept expiry, $400 strike)
+- You receive the premium immediately (e.g. ~$20/share = $2,000) — yours to keep regardless
+- At expiry: if MSFT stays below $400, call expires worthless and you keep shares + premium; if above $400, shares get called away at $400
+
+**Trade-off:** Immediate income + lower cost basis vs. capping upside above $400. Works best if you expect MSFT to trade sideways or recover slowly.
+
+**Note on the $400 strike:** Verify current MSFT price first — if MSFT is already above $400, that strike is in-the-money and assignment is likely. You'd typically want an out-of-the-money strike (above current price) to keep more upside.
+
+**To execute on Tiger Brokers:**
+1. MSFT → Options tab → select Sept expiry → Call → $400 strike
+2. Tap **Sell** → order type **Sell to Open**, qty 1 contract
+3. Set a limit price near the bid; confirm
+4. Premium lands in cash; your 100 MSFT shares are held as collateral until expiry or buyback
+- Requires options trading permissions enabled on Tiger account (apply under Account → Permissions if not yet active)
+
 ### 8. ORCL — binary decision at next earnings
 - PEG 0.46 is compelling but $68B net debt + negative FCF is a serious red flag
 - If OCI revenue growth accelerates AND FCF moves toward neutral: hold, consider adding 20–30 shares
@@ -59,7 +78,7 @@ Buy to close all 3 short SPY PUT 700 Nov-2026 contracts.
 
 ### 9. SPY put management calendar
 - **September 2026:** Review all long put positions; if SPY still above $750, decide whether to roll to March 2027
-- **If SPY breaks above $760:** Close long 750/755 puts — hedge thesis has been tested and is working against you
+- **If SPY breaks above $760:** Close long 750/755 puts  — hedge thesis has been tested and is working against you
 - **If SPY falls to $730–$735:** Take partial profit on 2 of the 4 long 750 puts
 
 ---
