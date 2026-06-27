@@ -4,11 +4,12 @@
 
 | Leg | Qty | Strike | Expiry | Current Price | P&L |
 |---|---|---|---|---|---|
-| Long SPY PUT | +4 | 750 | 2026-11-20 | $32.03 | +$1,482 |
-| Long SPY PUT | +2 | 755 | 2026-11-20 | $34.18 | +$972 |
-| Short SPY PUT | -3 | 700 | 2026-11-20 | $17.50 | -$384 |
-| Short SPY PUT | -2 | 650 | 2026-11-20 | $10.14 | -$145 |
-| SHV (cash proxy) | 300 shares | — | — | $110.20 | +$35 |
+| Long SPY PUT | +4 | 750 | 2026-11-20 | $28.00 | −$130 |
+| Long SPY PUT | +2 | 755 | 2026-11-20 | $29.90 | +$116 |
+| Short SPY PUT | −3 | 700 | 2026-11-20 | $15.23 | +$297 |
+| Short SPY PUT | −2 | 650 | 2026-11-20 | $8.81 | +$121 |
+| SHV (cash proxy) | 300 shares | — | — | $110.26 | +$53 |
+| GOOG 400C | +1 | 400 | 2026-11-20 | $24.40 | −$65 |
 
 ---
 
@@ -271,3 +272,40 @@ SAFE (SHV) <——> ANTIFRAGILE DOWN (SPY long puts) + ANTIFRAGILE UP (GOOG 400C
 - GOOG 400C profits if GOOG breaks out above $425 (all-time high territory)
 - Both legs: max loss = premium paid, upside is convex and uncapped
 - Only enemy: a calm, sideways market — where SHV earns yield quietly anyway
+
+---
+
+## What Does a 9/10 Portfolio Look Like?
+
+### Why a Composite 9/10 Is Nearly Theoretical
+
+A genuine 9/10+ across all four frameworks simultaneously barely exists, because the frameworks have real conflicts baked in:
+
+| Conflict | Framework A | Framework B |
+|---|---|---|
+| Deploy cash now | Lynch: sub-1 PEG compounders are available | Taleb: cash is dry powder, hold for dislocations |
+| Entry timing | Yahoo: strong buys at current prices | Marks: don't deploy at 52-week highs |
+| Position sizing | Lynch: size up your best GARP ideas | Taleb: no single position should be able to cause ruin |
+
+A portfolio that fully satisfies all four at once would require: great valuations **and** a market far from highs **and** no correlated positions **and** a true barbell with no self-undermining legs. That combination is rare.
+
+### Best Real-World Examples to Study (by Framework)
+
+| Portfolio | Why It Scores High | Where to Find It |
+|---|---|---|
+| **Berkshire Hathaway 13-F** | Lynch + Marks: quality businesses at value, massive cash buffer, favorable asymmetry, no internal contradictions | SEC EDGAR — quarterly 13-F filings |
+| **Ray Dalio's All-Weather** | Taleb + Marks: 25% stocks / 25% gold / 25% bonds / 25% T-bills — diversified across regimes, no correlated fragility | Bridgewater public writing; Tony Robbins' *Money* book has the full allocation |
+| **Universa Investments** (Spitznagel / Taleb) | Pure Taleb 10/10: tail-hedge barbell, convex payoffs only, small premium for massive tail exposure | Spitznagel's book *Safe Haven* — the entire book is this |
+| **Harry Browne's Permanent Portfolio** | Marks + Taleb: 25% each in stocks, gold, T-bills, long bonds — performs in all four economic environments | Browne's book *Fail-Safe Investing* |
+
+### Key Insight
+
+The meatball portfolio's **intent** is already close to the right structure. The gap between 6/10 and 9/10 isn't picking different stocks — it's removing self-contradictions:
+
+- Short puts capping the hedge → close them
+- IBIT adding fragility at the wrong scale → exit
+- AI cluster at 36% NAV with correlated drawdown risk → cap at 33%
+
+After those three fixes, the barbell (SHV + cash as safe pole, long puts + GOOG call as convex pole, quality compounders in the middle) is structurally sound.
+
+**Best single book to read:** Spitznagel's *Safe Haven* — it is a full quantitative treatment of what a properly constructed tail-hedge barbell looks like, with historical backtest data.

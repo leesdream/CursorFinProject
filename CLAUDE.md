@@ -73,3 +73,15 @@ python -m venv .venv
 .venv/Scripts/activate   # Windows
 pip install -r requirements.txt
 ```
+
+## Documentation
+
+When asked to document or save analysis, always append to the existing relevant file (e.g., nextstep.md, reference/projectexplaination.md) rather than creating a new file unless explicitly told to.
+
+## Financial Analysis
+
+Frame portfolio and options analysis using the barbell/Taleb risk framework with live market data from the yahoo-finance MCP server.
+
+## Tooling Fallbacks
+
+When a browser/screenshot tool is unavailable, fall back to reading the generated HTML directly instead of failing.
