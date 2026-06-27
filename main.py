@@ -8,6 +8,7 @@ import asyncio
 import io
 import json
 import sys
+import threading
 import webbrowser
 from datetime import datetime
 from pathlib import Path
@@ -333,3 +334,13 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
+    import trade_advisor
+    port = trade_advisor.start()
+    print(f"\n  Trade Planner listening on http://localhost:{port}")
+    print("  Keep this window open while using the Trade Planner tab.")
+    print("  Press Ctrl+C to stop.\n")
+    try:
+        threading.Event().wait()
+    except KeyboardInterrupt:
+        print("Stopped.")

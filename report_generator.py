@@ -122,9 +122,6 @@ def _analysis_tabs(
 ) -> str:
     # Synthesis first, then MCP, then philosophy
     all_sections: dict[str, str] = {**synthesis_section, **mcp_sections, **philosophy_sections}
-    if not all_sections:
-        return ""
-
     date_badge = (
         f'<span class="badge bg-secondary fw-normal ms-3" style="font-size:.72rem">'
         f'cached {analysis_date}</span>'
@@ -159,6 +156,30 @@ def _analysis_tabs(
           <div class="analysis-content">{_md_to_html(content)}</div>
         </div>"""
 
+    # Trade Planner — always the last tab; interactive, powered by trade_advisor.py
+    tab_nav += """
+        <li class="nav-item" role="presentation">
+          <button class="nav-link px-3 py-2" data-bs-toggle="tab"
+                  data-bs-target="#tab-trade-planner" type="button" role="tab">
+            &#9998; Trade Planner</button>
+        </li>"""
+    tab_panes += """
+        <div class="tab-pane fade" id="tab-trade-planner" role="tabpanel">
+          <p class="text-muted small mb-3">
+            Enter your planned trades for the next session. Analysis applies Lynch &middot; Marks &middot; Taleb
+            &mdash; no live market data calls.
+            <span class="text-warning">&#9888; Requires <code>main.py</code> to be running.</span>
+          </p>
+          <textarea id="tp-input" class="form-control mb-3" rows="6"
+            placeholder="e.g.&#10;Buy 50 NVDA at ~$130&#10;Sell 2 SPY 750P Nov 2026&#10;Buy 1 AAPL 200C Jan 2027 at ~$5.50"></textarea>
+          <div class="d-flex align-items-center gap-3 mb-3">
+            <button id="tp-btn" class="btn btn-primary btn-sm" onclick="tpAnalyze()">Analyze Trades</button>
+            <div id="tp-spinner" class="spinner-border spinner-border-sm text-primary d-none" role="status"></div>
+            <span id="tp-status" class="text-muted small"></span>
+          </div>
+          <div id="tp-result" class="analysis-content border-top pt-3 d-none"></div>
+        </div>"""
+
     return f"""
   <div class="card shadow-sm mb-4">
     <div class="card-header d-flex align-items-center">
@@ -175,6 +196,37 @@ def _analysis_tabs(
   </div>"""
 
 
+def _portfolio_text_summary(portfolio: Portfolio) -> str:
+    lines = [
+        f"Statement: {portfolio.statement_date}",
+        f"Total value: ${portfolio.overview.ending_total:,.2f}",
+        f"Cash: ${portfolio.overview.ending_cash:,.2f}",
+        f"Stocks: ${portfolio.overview.ending_stock:,.2f}",
+        f"Options: ${portfolio.overview.ending_options:,.2f}",
+        "",
+        "Holdings:",
+    ]
+    for p in portfolio.stocks:
+        lines.append(
+            f"  {p.symbol} {p.quantity:+.0f}sh | cost {p.currency}{p.cost_price:.2f}"
+            f" | last {p.currency}{p.close_price:.2f} | value ${p.market_value:,.0f}"
+            f" | P&L {'+'if p.unrealized_pnl>=0 else ''}{p.unrealized_pnl:,.0f}"
+        )
+    for p in portfolio.options:
+        label = getattr(p, "spread_label", "") or ""
+        note = f" [{label}]" if label else ""
+        lines.append(
+            f"  {p.symbol}{note} {p.quantity:+.0f}ct | cost {p.currency}{p.cost_price:.2f}"
+            f" | last {p.currency}{p.close_price:.2f}"
+            f" | P&L {'+'if p.unrealized_pnl>=0 else ''}{p.unrealized_pnl:,.0f}"
+        )
+    for p in portfolio.funds:
+        lines.append(
+            f"  {p.symbol} (fund) {p.quantity:+.0f}sh | value ${p.market_value:,.0f}"
+        )
+    return "\n".join(lines)
+
+
 def _chart_data(portfolio: Portfolio) -> str:
     stocks = portfolio.stocks
     if not stocks:
@@ -182,6 +234,45 @@ def _chart_data(portfolio: Portfolio) -> str:
     labels = [p.symbol for p in stocks]
     values = [round(p.market_value, 2) for p in stocks]
     return json.dumps({"labels": labels, "values": values})
+
+
+_TP_SCRIPT = """\
+const TP_PORTFOLIO = TP_SUMMARY_PLACEHOLDER;
+async function tpAnalyze() {
+  const trades = document.getElementById('tp-input').value.trim();
+  if (!trades) {
+    document.getElementById('tp-status').textContent = 'Enter at least one trade.';
+    return;
+  }
+  const btn = document.getElementById('tp-btn');
+  const spinner = document.getElementById('tp-spinner');
+  const status = document.getElementById('tp-status');
+  const result = document.getElementById('tp-result');
+  btn.disabled = true;
+  spinner.classList.remove('d-none');
+  status.textContent = 'Analyzing — 1 Claude call, ~10 sec…';
+  result.classList.add('d-none');
+  try {
+    const resp = await fetch('http://localhost:7823/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ trades: trades, portfolio: TP_PORTFOLIO }),
+    });
+    if (!resp.ok) throw new Error('Server returned ' + resp.status);
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error);
+    result.innerHTML = marked.parse(data.analysis);
+    result.classList.remove('d-none');
+    status.textContent = '';
+  } catch (err) {
+    status.textContent = 'Error: ' + err.message + ' — is main.py still running?';
+    status.className = 'text-danger small';
+  } finally {
+    btn.disabled = false;
+    spinner.classList.add('d-none');
+  }
+}
+"""
 
 
 def build_report(
@@ -201,6 +292,9 @@ def build_report(
     chart_data = _chart_data(portfolio)
 
     generated_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    tp_script = _TP_SCRIPT.replace(
+        "TP_SUMMARY_PLACEHOLDER", json.dumps(_portfolio_text_summary(portfolio))
+    )
 
     holdings_html = (
         _holdings_table(portfolio.stocks, "Stocks")
@@ -217,6 +311,7 @@ def build_report(
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
   <style>
     body {{ background: #f8f9fa; }}
     .stat-card {{ border-left: 4px solid #0d6efd; }}
@@ -346,6 +441,7 @@ if (chartData) {{
     }}
   }});
 }}
+{tp_script}
 </script>
 </body>
 </html>"""
